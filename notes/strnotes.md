@@ -10,3 +10,7 @@ Acccording to (this thread)[https://www.reddit.com/r/rust/comments/3e6zpq/anyone
     - Build up the configuration structure of the option flags
     - Add string parsing
     - Profit.
+
+## Optional enhancements
+
+    For extra credit, add language-specific parsers. So python strings, rust strings, lua strings... perl strings? yyyyeah unlikely. 
