@@ -1,7 +1,7 @@
 extern crate clap;
 
 use clap::{App, Arg, ArgMatches};
-use std::io::{self, Read, BufRead, stdin};
+use std::io::{self, Read, BufRead, Write, stdin, stdout};
 use std::fs::File;
 
 struct Input<'a> {
@@ -84,6 +84,9 @@ fn getOpts<'a>() -> ArgMatches<'a> {
 
 fn main() {
     let matches = getOpts(); 
-    let standard = stdin();
-    let stream = Input::console(&standard); 
+    let input = stdin();
+    let output = stdout();
+    let mut stream = Input::console(&input); 
+    let mut handle = output.lock();
+    handle.write(stream.fill_buf().unwrap());
     }
