@@ -2,6 +2,7 @@ extern crate clap;
 extern crate regex;
 
 use clap::{App, Arg, ArgMatches};
+use regex::{Regex, RegexBuilder};
 use std::io::{self, Read, BufRead, Write, stdin, stdout};
 use std::fs::File;
 use std::error::Error;
@@ -100,6 +101,8 @@ fn main() {
         None => default_join,
         Some(s) => s,
     };
+    let matcher = build_regex(matches.is_present("single"),
+            matches.is_present("double"));
     let unwrap = matches.is_present("unwrap");
     match matches.values_of("file") {
         None => {
@@ -124,7 +127,20 @@ fn main() {
     std::process::exit(return_code)
 }
 
-fn run<'a>(mut stream: Input) -> String {
+fn build_regex(single: bool, double: bool) -> Regex {
+    let double_quote = "\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"";
+    let single_quote = "'[^'\\\\]*(\\\\.[^'\\\\]*)*'";
+    if single {
+        Regex::new(single_quote).unwrap()
+    } else if double {
+        Regex::new(double_quote).unwrap()
+    } else {
+        let joint = format!("{}|{}", single_quote, double_quote);
+        Regex::new(&joint).unwrap()
+    }
+}
+
+fn run(mut stream: Input) -> String {
     // TODO handle possible errors instead of just unwrap
     let maybe_utf8 = from_utf8(stream.fill_buf().unwrap());
     match maybe_utf8 {
