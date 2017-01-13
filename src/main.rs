@@ -61,37 +61,6 @@ fn write_out(strs: String) {
     handle.write(strs.as_bytes());
 }
 
-
-struct Input<'a> {
-    source: Box<BufRead + 'a>
-}
-
-impl<'a> Input<'a> {
-    fn console(stdin: &'a io::Stdin) -> Input<'a> {
-        Input { source: Box::new(stdin.lock()) }
-    }
-
-    fn file(path: &str) -> io::Result<Input<'a>> {
-        File::open(path)
-            .map(|file| Input { source: Box::new(io::BufReader::new(file)) })
-    }
-}
-
-impl<'a> Read for Input<'a> {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.source.read(buf)
-    }
-}
-
-impl<'a> BufRead for Input<'a> {
-    fn fill_buf(&mut self) -> io::Result<&[u8]> {
-        self.source.fill_buf()
-    }
-    fn consume(&mut self, amt: usize) {
-        self.source.consume(amt);
-    }
-}
-
 /// Parse the command line arguments.
 fn get_opts<'a>() -> ArgMatches<'a> {
     App::new("strs")
@@ -165,4 +134,35 @@ fn capture_strings(mut stream: Input, matcher: &Regex, joinery: &str) -> String 
     };
     phrase.push_str(joinery);
     phrase
+}
+
+/// Input. Generalizes over files and stdin. 
+struct Input<'a> {
+    source: Box<BufRead + 'a>
+}
+
+impl<'a> Input<'a> {
+    fn console(stdin: &'a io::Stdin) -> Input<'a> {
+        Input { source: Box::new(stdin.lock()) }
+    }
+
+    fn file(path: &str) -> io::Result<Input<'a>> {
+        File::open(path)
+            .map(|file| Input { source: Box::new(io::BufReader::new(file)) })
+    }
+}
+
+impl<'a> Read for Input<'a> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.source.read(buf)
+    }
+}
+
+impl<'a> BufRead for Input<'a> {
+    fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        self.source.fill_buf()
+    }
+    fn consume(&mut self, amt: usize) {
+        self.source.consume(amt);
+    }
 }
