@@ -87,18 +87,21 @@ fn getOpts<'a>() -> ArgMatches<'a> {
 
 fn main() {
     let matches = getOpts(); 
-    let input = stdin();
-    if !matches.is_present("file") {
-        let stream = Input::console(&input);
-        run(stream);
-    } else {
-        for filestring in matches.values_of("file").unwrap() {
-            let stream = Input::file(filestring);
-            match stream {
-                Err(why) => panic!("{:?}", why),
-                Ok(file) => run(file),  
+    match matches.values_of("file") {
+        None => {
+            let input = stdin();
+            let stream = Input::console(&input);
+            run(stream);
+        },
+        Some(value) => {
+            for filestring in value {
+                let stream = Input::file(filestring);
+                match stream {
+                    Err(why) => panic!("{:?}", why),
+                    Ok(file) => run(file),  
+                }
             }
-        }
+        },
     }
 }
 
