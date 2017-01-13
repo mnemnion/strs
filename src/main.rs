@@ -3,6 +3,7 @@ extern crate clap;
 use clap::{App, Arg, ArgMatches};
 use std::io::{self, Read, BufRead, Write, stdin, stdout};
 use std::fs::File;
+use std::error::Error;
 
 struct Input<'a> {
     source: Box<BufRead + 'a>
@@ -86,7 +87,17 @@ fn getOpts<'a>() -> ArgMatches<'a> {
 
 
 fn main() {
-    let matches = getOpts(); 
+    let mut return_code = 0;
+    let matches = getOpts();
+    let default_join = match matches.is_present("envelope") {
+        true => ",",
+        false => " "
+    };
+    let joinery = match matches.value_of("join") {
+        None => default_join,
+        Some(s) => s,
+    };
+    let unwrap = matches.is_present("unwrap");
     match matches.values_of("file") {
         None => {
             let input = stdin();
@@ -95,14 +106,16 @@ fn main() {
         },
         Some(value) => {
             for filestring in value {
-                let stream = Input::file(filestring);
-                match stream {
-                    Err(why) => panic!("{:?}", why),
+                let maybefile = Input::file(filestring);
+                match maybefile {
+                    // Replace the below with something sensible. 
+                    Err(why) => panic!("{}", why),
                     Ok(file) => run(file),  
                 }
             }
         },
     }
+    std::process::exit(return_code)
 }
 
 fn run(mut stream: Input) {
