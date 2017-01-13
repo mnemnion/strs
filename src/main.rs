@@ -57,7 +57,8 @@ fn getOpts<'a>() -> ArgMatches<'a> {
             .long("single")
             .short("s")
             .takes_value(false)
-            .required(false))
+            .required(false)
+            .conflicts_with("double"))
         .arg(Arg::with_name("double")
             .help("Capture only \"double quoted\" strings.")
             .long("double")
@@ -85,7 +86,6 @@ fn getOpts<'a>() -> ArgMatches<'a> {
             .multiple(true))
         .get_matches()
 }
-
 
 fn main() {
     let mut strs = String::with_capacity(1024);
