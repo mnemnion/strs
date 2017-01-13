@@ -74,7 +74,7 @@ fn getOpts<'a>() -> ArgMatches<'a> {
             .required(false))
         .arg(Arg::with_name("join")
             .help("Join the strings with <join>. \
-                   Defaults to \" \" or \",\" with -e.")
+                   Defaults to \" \" or with -e to \",\".")
             .long("join")
             .short("j")
             .takes_value(true)
@@ -125,5 +125,9 @@ fn main() {
 
 fn run<'a>(mut stream: Input) -> String {
     // TODO handle possible errors instead of just unwrap
-    String::from(from_utf8(stream.fill_buf().unwrap()).unwrap())
+    let maybe_utf8 = from_utf8(stream.fill_buf().unwrap());
+    match maybe_utf8 {
+        Ok(utf8) => String::from(utf8),
+        Err(why) => panic!("Invalid utf-8 in input: {:?}", why),
+    }
 }
