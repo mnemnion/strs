@@ -32,7 +32,7 @@ fn main() {
         None => {
             let input = stdin();
             let stream = Input::console(&input);
-            strs.push_str(&run(stream));
+            strs.push_str(&capture_strings(stream, &matcher, joinery));
         },
         Some(value) => {
             for filestring in value {
@@ -40,11 +40,14 @@ fn main() {
                 match maybefile {
                     // Replace the below with something sensible. 
                     Err(why) => panic!("{}", why),
-                    Ok(file) => strs.push_str(&run(file)),  
+                    Ok(file) => strs.push_str(&capture_strings(file,
+                            &matcher, joinery)),  
                 }
             }
         },
     }
+    // Remove final join string
+    strs = strs[..(strs.len() - joinery.len())].to_string();
     if envelop {
         strs.push(']')
     };
@@ -153,11 +156,13 @@ fn build_regex(single: bool, double: bool) -> Regex {
     }
 }
 
-fn run(mut stream: Input) -> String {
+fn capture_strings(mut stream: Input, matcher: &Regex, joinery: &str) -> String {
     // TODO handle possible errors instead of just unwrap
     let maybe_utf8 = from_utf8(stream.fill_buf().unwrap());
-    match maybe_utf8 {
+    let mut phrase = match maybe_utf8 {
         Ok(utf8) => String::from(utf8),
         Err(why) => panic!("Invalid utf-8 in input: {:?}", why),
-    }
+    };
+    phrase.push_str(joinery);
+    phrase
 }
