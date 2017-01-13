@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate regex;
 
 use clap::{App, Arg, ArgMatches};
 use std::io::{self, Read, BufRead, Write, stdin, stdout};

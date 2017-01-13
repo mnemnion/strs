@@ -5,3 +5,4 @@ authors = ["atman <atmanistan@gmail.com>"]
 
 [dependencies]
 clap = "2.20.0"
+regex = "0.2"
