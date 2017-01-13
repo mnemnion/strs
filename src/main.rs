@@ -135,8 +135,8 @@ fn build_regex(single: bool, double: bool) -> Regex {
     } else if double {
         Regex::new(double_quote).unwrap()
     } else {
-        let joint = format!("{}|{}", single_quote, double_quote);
-        Regex::new(&joint).unwrap()
+        let joint = &format!("{}|{}", single_quote, double_quote);
+        Regex::new(joint).unwrap()
     }
 }
 
