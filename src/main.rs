@@ -4,6 +4,7 @@ use clap::{App, Arg, ArgMatches};
 use std::io::{self, Read, BufRead, Write, stdin, stdout};
 use std::fs::File;
 use std::error::Error;
+use std::str::from_utf8;
 
 struct Input<'a> {
     source: Box<BufRead + 'a>
@@ -38,7 +39,7 @@ impl<'a> BufRead for Input<'a> {
 /// Parse the command line arguments.
 fn getOpts<'a>() -> ArgMatches<'a> {
     App::new("strs")
-        .version("0.1.0 SNAPSHOT")
+        .version("0.1.1 SNAPSHOT")
         .about("\nstrs filters a text stream for quoted strings, \
                 passing the result to stdout. \
                 Follows C conventions for what a string is.")
@@ -87,6 +88,7 @@ fn getOpts<'a>() -> ArgMatches<'a> {
 
 
 fn main() {
+    let mut strs = String::with_capacity(1024);
     let mut return_code = 0;
     let matches = getOpts();
     let default_join = match matches.is_present("envelope") {
@@ -102,7 +104,7 @@ fn main() {
         None => {
             let input = stdin();
             let stream = Input::console(&input);
-            run(stream);
+            strs.push_str(&run(stream));
         },
         Some(value) => {
             for filestring in value {
@@ -110,16 +112,18 @@ fn main() {
                 match maybefile {
                     // Replace the below with something sensible. 
                     Err(why) => panic!("{}", why),
-                    Ok(file) => run(file),  
+                    Ok(file) => strs.push_str(&run(file)),  
                 }
             }
         },
-    }
+    };
+    let output = stdout();
+    let mut handle = output.lock(); 
+    handle.write(strs.as_bytes());
     std::process::exit(return_code)
 }
 
-fn run(mut stream: Input) {
-    let output = stdout();
-    let mut handle = output.lock(); 
-    handle.write(stream.fill_buf().unwrap());
+fn run<'a>(mut stream: Input) -> String {
+    // TODO handle possible errors instead of just unwrap
+    String::from(from_utf8(stream.fill_buf().unwrap()).unwrap())
 }

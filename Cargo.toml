@@ -1,6 +1,6 @@
 [package]
 name = "strs"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["atman <atmanistan@gmail.com>"]
 
 [dependencies]
