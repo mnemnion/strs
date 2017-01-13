@@ -2,11 +2,62 @@ extern crate clap;
 extern crate regex;
 
 use clap::{App, Arg, ArgMatches};
-use regex::{Regex, RegexBuilder};
+use regex::Regex;
 use std::io::{self, Read, BufRead, Write, stdin, stdout};
 use std::fs::File;
 use std::error::Error;
 use std::str::from_utf8;
+
+
+fn main() {
+    let mut strs = String::with_capacity(1024);
+    let mut return_code = 0;
+    let matches = get_opts();
+    let default_join = match matches.is_present("envelop") {
+        true => ",",
+        false => " "
+    };
+    let joinery = match matches.value_of("join") {
+        None => default_join,
+        Some(s) => s,
+    };
+    let matcher = build_regex(matches.is_present("single"),
+            matches.is_present("double"));
+    let unwrap = matches.is_present("unwrap");
+    let envelop = matches.is_present("envelop");
+    if envelop {
+        strs.push('[')
+    };
+    match matches.values_of("file") {
+        None => {
+            let input = stdin();
+            let stream = Input::console(&input);
+            strs.push_str(&run(stream));
+        },
+        Some(value) => {
+            for filestring in value {
+                let maybefile = Input::file(filestring);
+                match maybefile {
+                    // Replace the below with something sensible. 
+                    Err(why) => panic!("{}", why),
+                    Ok(file) => strs.push_str(&run(file)),  
+                }
+            }
+        },
+    }
+    if envelop {
+        strs.push(']')
+    };
+    write_out(strs);
+    std::process::exit(return_code)
+}
+
+fn write_out(strs: String) {
+    let output = stdout();
+    let mut handle = output.lock();
+    handle.write(strs.as_bytes());
+}
+
 
 struct Input<'a> {
     source: Box<BufRead + 'a>
@@ -39,7 +90,7 @@ impl<'a> BufRead for Input<'a> {
 }
 
 /// Parse the command line arguments.
-fn getOpts<'a>() -> ArgMatches<'a> {
+fn get_opts<'a>() -> ArgMatches<'a> {
     App::new("strs")
         .version("0.1.1 SNAPSHOT")
         .about("\nstrs filters a text stream for quoted strings, \
@@ -87,44 +138,6 @@ fn getOpts<'a>() -> ArgMatches<'a> {
             .takes_value(true)
             .multiple(true))
         .get_matches()
-}
-
-fn main() {
-    let mut strs = String::with_capacity(1024);
-    let mut return_code = 0;
-    let matches = getOpts();
-    let default_join = match matches.is_present("envelope") {
-        true => ",",
-        false => " "
-    };
-    let joinery = match matches.value_of("join") {
-        None => default_join,
-        Some(s) => s,
-    };
-    let matcher = build_regex(matches.is_present("single"),
-            matches.is_present("double"));
-    let unwrap = matches.is_present("unwrap");
-    match matches.values_of("file") {
-        None => {
-            let input = stdin();
-            let stream = Input::console(&input);
-            strs.push_str(&run(stream));
-        },
-        Some(value) => {
-            for filestring in value {
-                let maybefile = Input::file(filestring);
-                match maybefile {
-                    // Replace the below with something sensible. 
-                    Err(why) => panic!("{}", why),
-                    Ok(file) => strs.push_str(&run(file)),  
-                }
-            }
-        },
-    };
-    let output = stdout();
-    let mut handle = output.lock(); 
-    handle.write(strs.as_bytes());
-    std::process::exit(return_code)
 }
 
 fn build_regex(single: bool, double: bool) -> Regex {
