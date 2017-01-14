@@ -1,0 +1,7 @@
+There are no strings here.
+This is not a string but "this is a string" and 
+"this \" string has \\\" escapes in it"
+'this \' single string has \\\' escapes in it too \\'
+"this also \
+should work" and there is more that is not a string, 
+in fact " this final non-string should not be present.
