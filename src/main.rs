@@ -118,8 +118,8 @@ fn get_opts<'a>() -> ArgMatches<'a> {
 }
 
 fn build_regex(single: bool, double: bool) -> Regex {
-    let double_quote = "(\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\")";
-    let single_quote = "('[^'\\\\]*(\\\\.[^'\\\\]*)*')";
+    let double_quote = "(?s)\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"";
+    let single_quote = "(?s)'[^'\\\\]*(\\\\.[^'\\\\]*)*'";
     if single {
         Regex::new(single_quote).unwrap()
     } else if double {
@@ -132,7 +132,6 @@ fn build_regex(single: bool, double: bool) -> Regex {
 
 fn capture_strings(mut stream: Input, matcher: &Regex, 
                    joinery: &str, unwrap: bool) -> String {
-    // TODO handle possible errors instead of just unwrap
     let maybe_utf8 = from_utf8(stream.fill_buf().unwrap());
     let mut captures = String::with_capacity(CAP);
     let phrase = match maybe_utf8 {
