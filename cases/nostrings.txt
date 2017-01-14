@@ -1,0 +1,5 @@
+there are no strings here.
+This isn't the beginning of a string.
+This doesn't end it.
+"If the newline isn't escaped,
+"Then it isn't a string. Period. 

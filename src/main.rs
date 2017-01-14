@@ -10,59 +10,11 @@ use std::process::exit;
 
 const CAP: usize = 1024; // Initial String capacity
 
-
-fn main() {
-    let mut strs = String::with_capacity(CAP);
-    let matches = get_opts();
-    // Set the string to join captures
-    let default_join = match matches.is_present("envelop") {
-        true => ",",
-        false => " "
-    };
-    let joinery = match matches.value_of("join") {
-        None => default_join,
-        Some(s) => s,
-    };
-    let matcher = build_regex(matches.is_present("single"),
-            matches.is_present("double"));
-    let unwrap = matches.is_present("unwrap");
-    let envelop = matches.is_present("envelop");
-    if envelop {
-        strs.push('[')
-    };
-    match matches.values_of("file") {
-        None => {
-            let input = stdin();
-            let stream = Input::std(&input);
-            strs.push_str(&capture_strings(
-                    stream, &matcher, joinery, unwrap));
-        },
-        Some(value) => {
-            for filestring in value {
-                match Input::file(filestring) {
-                    // Replace the below with something sensible. 
-                    Err(_) => { println!("No such file or directory");
-                                  exit(2) },
-                    Ok(file) => strs.push_str(&capture_strings(
-                        file, &matcher, joinery, unwrap)),  
-                }
-            }
-        },
-    }
-    // Remove final join string, only if we've captured anything.
-    if strs.len() > joinery.len() { 
-        strs = strs[..(strs.len() - joinery.len())].to_string();
-    }
-    if envelop {
-        strs.push(']')
-    };
-    write_out(strs); 
-}
-
 /// Parse the command line arguments.
+/// Gives a reasonable overview of the program scope.
 fn get_opts<'a>() -> ArgMatches<'a> {
     App::new("strs")
-        .version("0.1.1 SNAPSHOT")
+        .version("0.1.2 SNAPSHOT")
         .about("\nstrs filters a text stream for quoted strings, \
                 passing the result to stdout. \
                 Follows C conventions for what a string is.")
@@ -109,10 +61,56 @@ fn get_opts<'a>() -> ArgMatches<'a> {
             .multiple(true))
         .get_matches()
 }
+fn main() {
+    let mut strs = String::with_capacity(CAP);
+    let matches = get_opts();
+    // Set the string with which to join captures
+    let default_join = match matches.is_present("envelop") {
+        true => ",",
+        false => " "
+    };
+    let joinery = match matches.value_of("join") {
+        None => default_join,
+        Some(s) => s,
+    };
+    let matcher = build_regex(matches.is_present("single"),
+            matches.is_present("double"));
+    let unwrap = matches.is_present("unwrap");
+    let envelop = matches.is_present("envelop");
+    if envelop {
+        strs.push('[')
+    };
+    match matches.values_of("file") {
+        None => {
+            let input = stdin();
+            let stream = Input::std(&input);
+            strs.push_str(&capture_strings(
+                    stream, &matcher, joinery, unwrap));
+        },
+        Some(value) => {
+            for filestring in value {
+                match Input::file(filestring) {
+                    Err(_) => { println!("No such file or directory");
+                                exit(2) },
+                    Ok(file) => strs.push_str(&capture_strings(
+                            file, &matcher, joinery, unwrap)),  
+                }
+            }
+        },
+    }
+    // Remove final join string, only if we've captured anything.
+    if strs.len() > joinery.len() { 
+        strs = strs[..(strs.len() - joinery.len())].to_string();
+    }
+    if envelop {
+        strs.push(']')
+    };
+    write_out(strs); 
+}
 
 fn build_regex(single: bool, double: bool) -> Regex {
-    let double_quote = "(?s)\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"";
-    let single_quote = "(?s)'[^'\\\\]*(\\\\.[^'\\\\]*)*'";
+    let double_quote = "(?s)\"[^\n\"\\\\]*(\\\\.[^\n\"\\\\]*)*\"";
+    let single_quote = "(?s)'[^\n'\\\\]*(\\\\.[^\n'\\\\]*)*'";
     if single {
         Regex::new(single_quote).unwrap()
     } else if double {
@@ -142,7 +140,6 @@ fn capture_strings(mut stream: Input, matcher: &Regex,
     }
     captures
 }
-
 
 /// Write the result to stdout.
 fn write_out(strs: String) {
