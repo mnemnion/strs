@@ -1,0 +1,7 @@
+Here we have a line with no strings
+
+"double string one" "double string two" "double string three"
+
+'single string one' 'single string two' 'single string three'.
+
+This is also not a string.
