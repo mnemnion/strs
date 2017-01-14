@@ -15,6 +15,7 @@ fn main() {
     let mut strs = String::with_capacity(CAP);
     let mut return_code = 0;
     let matches = get_opts();
+    // Set the string to join captures
     let default_join = match matches.is_present("envelop") {
         true => ",",
         false => " "
@@ -34,7 +35,8 @@ fn main() {
         None => {
             let input = stdin();
             let stream = Input::console(&input);
-            strs.push_str(&capture_strings(stream, &matcher, joinery));
+            strs.push_str(&capture_strings(
+                    stream, &matcher, joinery, unwrap));
         },
         Some(value) => {
             for filestring in value {
@@ -42,14 +44,14 @@ fn main() {
                 match maybefile {
                     // Replace the below with something sensible. 
                     Err(why) => panic!("{}", why),
-                    Ok(file) => strs.push_str(&capture_strings(file,
-                            &matcher, joinery)),  
+                    Ok(file) => strs.push_str(&capture_strings(
+                        file, &matcher, joinery, unwrap)),  
                 }
             }
         },
     }
-    // Remove final join string
-    if strs.len() >= joinery.len() { 
+    // Remove final join string, only if we've captured anything.
+    if strs.len() > joinery.len() { 
         strs = strs[..(strs.len() - joinery.len())].to_string();
     }
     if envelop {
@@ -129,16 +131,22 @@ fn build_regex(single: bool, double: bool) -> Regex {
     }
 }
 
-fn capture_strings(mut stream: Input, matcher: &Regex, joinery: &str) -> String {
+fn capture_strings(mut stream: Input, matcher: &Regex, 
+                   joinery: &str, unwrap: bool) -> String {
     // TODO handle possible errors instead of just unwrap
     let maybe_utf8 = from_utf8(stream.fill_buf().unwrap());
     let mut captures = String::with_capacity(CAP);
-    let mut phrase = match maybe_utf8 {
+    let phrase = match maybe_utf8 {
         Ok(utf8) => String::from(utf8),
         Err(why) => panic!("Invalid utf-8 in input: {:?}", why),
     };
-    for quote in matcher.find_iter(&phrase) {
-        captures.push_str(&phrase[quote.start()..quote.end()]);
+    for offsets in matcher.find_iter(&phrase) {
+        let quote = if unwrap {
+            &phrase[offsets.start()+1..offsets.end()-1]
+        } else {
+            &phrase[offsets.start()..offsets.end()]
+        };
+        captures.push_str(quote);
         captures.push_str(joinery);
     }
     captures
