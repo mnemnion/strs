@@ -5,8 +5,8 @@ use clap::{App, Arg, ArgMatches};
 use regex::Regex;
 use std::io::{self, Read, BufRead, Write, stdin, stdout};
 use std::fs::File;
-use std::error::Error;
 use std::str::from_utf8;
+use std::process::exit;
 
 const CAP: usize = 1024; // Initial String capacity
 
@@ -40,10 +40,10 @@ fn main() {
         },
         Some(value) => {
             for filestring in value {
-                let maybefile = Input::file(filestring);
-                match maybefile {
+                match Input::file(filestring) {
                     // Replace the below with something sensible. 
-                    Err(why) => panic!("{}", why),
+                    Err(_) => { println!("No such file or directory");
+                                  exit(2) },
                     Ok(file) => strs.push_str(&capture_strings(
                         file, &matcher, joinery, unwrap)),  
                 }
@@ -57,14 +57,13 @@ fn main() {
     if envelop {
         strs.push(']')
     };
-    write_out(strs);
-    std::process::exit(return_code)
+    write_out(strs); 
 }
 
 fn write_out(strs: String) {
     let output = stdout();
     let mut handle = output.lock();
-    handle.write(strs.as_bytes());
+    let _ = handle.write(strs.as_bytes());
 }
 
 /// Parse the command line arguments.
