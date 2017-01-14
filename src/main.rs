@@ -113,8 +113,8 @@ fn get_opts<'a>() -> ArgMatches<'a> {
 }
 
 fn build_regex(single: bool, double: bool) -> Regex {
-    let double_quote = "\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"";
-    let single_quote = "'[^'\\\\]*(\\\\.[^'\\\\]*)*'";
+    let double_quote = "(\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\")";
+    let single_quote = "('[^'\\\\]*(\\\\.[^'\\\\]*)*')";
     if single {
         Regex::new(single_quote).unwrap()
     } else if double {
@@ -132,6 +132,9 @@ fn capture_strings(mut stream: Input, matcher: &Regex, joinery: &str) -> String 
         Ok(utf8) => String::from(utf8),
         Err(why) => panic!("Invalid utf-8 in input: {:?}", why),
     };
+    for quote in matcher.find_iter(&phrase) {
+        println!("matched: {}",&phrase[quote.start()..quote.end()]);
+    }
     phrase.push_str(joinery);
     phrase
 }
