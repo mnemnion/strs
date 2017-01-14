@@ -8,9 +8,11 @@ use std::fs::File;
 use std::error::Error;
 use std::str::from_utf8;
 
+const CAP: usize = 1024; // Initial String capacity
+
 
 fn main() {
-    let mut strs = String::with_capacity(1024);
+    let mut strs = String::with_capacity(CAP);
     let mut return_code = 0;
     let matches = get_opts();
     let default_join = match matches.is_present("envelop") {
@@ -47,7 +49,9 @@ fn main() {
         },
     }
     // Remove final join string
-    strs = strs[..(strs.len() - joinery.len())].to_string();
+    if strs.len() >= joinery.len() { 
+        strs = strs[..(strs.len() - joinery.len())].to_string();
+    }
     if envelop {
         strs.push(']')
     };
@@ -128,15 +132,16 @@ fn build_regex(single: bool, double: bool) -> Regex {
 fn capture_strings(mut stream: Input, matcher: &Regex, joinery: &str) -> String {
     // TODO handle possible errors instead of just unwrap
     let maybe_utf8 = from_utf8(stream.fill_buf().unwrap());
+    let mut captures = String::with_capacity(CAP);
     let mut phrase = match maybe_utf8 {
         Ok(utf8) => String::from(utf8),
         Err(why) => panic!("Invalid utf-8 in input: {:?}", why),
     };
     for quote in matcher.find_iter(&phrase) {
-        println!("matched: {}",&phrase[quote.start()..quote.end()]);
+        captures.push_str(&phrase[quote.start()..quote.end()]);
+        captures.push_str(joinery);
     }
-    phrase.push_str(joinery);
-    phrase
+    captures
 }
 
 /// Input. Generalizes over files and stdin. 
