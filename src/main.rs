@@ -13,7 +13,6 @@ const CAP: usize = 1024; // Initial String capacity
 
 fn main() {
     let mut strs = String::with_capacity(CAP);
-    let mut return_code = 0;
     let matches = get_opts();
     // Set the string to join captures
     let default_join = match matches.is_present("envelop") {
@@ -34,7 +33,7 @@ fn main() {
     match matches.values_of("file") {
         None => {
             let input = stdin();
-            let stream = Input::console(&input);
+            let stream = Input::std(&input);
             strs.push_str(&capture_strings(
                     stream, &matcher, joinery, unwrap));
         },
@@ -58,12 +57,6 @@ fn main() {
         strs.push(']')
     };
     write_out(strs); 
-}
-
-fn write_out(strs: String) {
-    let output = stdout();
-    let mut handle = output.lock();
-    let _ = handle.write(strs.as_bytes());
 }
 
 /// Parse the command line arguments.
@@ -150,13 +143,21 @@ fn capture_strings(mut stream: Input, matcher: &Regex,
     captures
 }
 
+
+/// Write the result to stdout.
+fn write_out(strs: String) {
+    let output = stdout();
+    let mut handle = output.lock();
+    let _ = handle.write(strs.as_bytes());
+}
+
 /// Input. Generalizes over files and stdin. 
 struct Input<'a> {
     source: Box<BufRead + 'a>
 }
 
 impl<'a> Input<'a> {
-    fn console(stdin: &'a io::Stdin) -> Input<'a> {
+    fn std(stdin: &'a io::Stdin) -> Input<'a> {
         Input { source: Box::new(stdin.lock()) }
     }
 
