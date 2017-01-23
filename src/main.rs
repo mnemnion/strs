@@ -61,6 +61,7 @@ fn get_opts<'a>() -> ArgMatches<'a> {
             .multiple(true))
         .get_matches()
 }
+
 fn main() {
     let mut strs = String::with_capacity(CAP);
     let matches = get_opts();
@@ -123,11 +124,14 @@ fn build_regex(single: bool, double: bool) -> Regex {
 
 fn capture_strings(mut stream: Input, matcher: &Regex, 
                    joinery: &str, unwrap: bool) -> String {
-    let maybe_utf8 = from_utf8(stream.fill_buf().unwrap());
     let mut captures = String::with_capacity(CAP);
-    let phrase = match maybe_utf8 {
+    let maybe_utf8 = match stream.fill_buf() {
+        Ok(filehandle) => filehandle,
+        Err(_) => return captures,
+    };
+    let phrase = match from_utf8(maybe_utf8) {
         Ok(utf8) => String::from(utf8),
-        Err(why) => panic!("Invalid utf-8 in input: {:?}", why),
+        Err(_) => return captures,
     };
     for offsets in matcher.find_iter(&phrase) {
         let quote = if unwrap {
